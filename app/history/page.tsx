@@ -32,7 +32,7 @@ export default async function HistoryPage() {
 
   return (
     <div className="min-h-screen pb-24">
-      <div className="bg-blue-600 text-white px-4 pt-10 pb-6">
+      <div className="bg-blue-700 text-white px-4 pt-10 pb-6">
         <h1 className="text-xl font-bold">היסטוריה והתקדמות</h1>
         <div className="flex gap-6 mt-3">
           <div>
