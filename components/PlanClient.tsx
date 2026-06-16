@@ -48,10 +48,14 @@ export default function PlanClient({ initialSessions }: { initialSessions: Sessi
   async function saveEdit(id: string) {
     setSaving(true)
     try {
+      const payload = {
+        ...editData,
+        methodNote: editData.methodNote?.trim() || null,
+      }
       const res = await fetch(`/api/plan/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editData),
+        body: JSON.stringify(payload),
       })
       if (!res.ok) throw new Error('שגיאה')
       const updated = await res.json()
@@ -118,6 +122,21 @@ export default function PlanClient({ initialSessions }: { initialSessions: Sessi
                               <select value={editData.status as string} onChange={e => setEditData(d => ({ ...d, status: e.target.value }))} className={inputClass}>
                                 {Object.entries(STATUS_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                               </select>
+                            </div>
+                            <div>
+                              <div className="flex items-center justify-between">
+                                <label className="text-xs text-slate-400">תיעוד / הערה</label>
+                                {editData.methodNote && (
+                                  <button type="button" onClick={() => setEditData(d => ({ ...d, methodNote: '' }))} className="text-xs text-red-400 hover:text-red-300">מחק הערה</button>
+                                )}
+                              </div>
+                              <textarea
+                                rows={3}
+                                value={editData.methodNote as string ?? ''}
+                                onChange={e => setEditData(d => ({ ...d, methodNote: e.target.value }))}
+                                placeholder="הוסף הערה או תיעוד..."
+                                className={inputClass + ' resize-none'}
+                              />
                             </div>
                             <div className="flex gap-2">
                               <button onClick={() => saveEdit(s.id)} disabled={saving} className="flex-1 bg-indigo-600 text-white rounded-lg py-2 text-sm font-medium disabled:opacity-60">שמור</button>
