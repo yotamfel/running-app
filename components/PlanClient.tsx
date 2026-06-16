@@ -174,13 +174,17 @@ export default function PlanClient({ initialSessions }: { initialSessions: Sessi
                               </div>
                             )}
 
-                            {s.status === 'planned' && (
-                              <div className="flex gap-2 mt-2">
-                                <button onClick={() => quickStatus(s.id, 'done')} className="text-xs bg-emerald-900/40 text-emerald-400 border border-emerald-800 px-3 py-1 rounded-full">בוצע</button>
-                                <button onClick={() => quickStatus(s.id, 'skipped')} className="text-xs bg-red-900/40 text-red-400 border border-red-800 px-3 py-1 rounded-full">פוספס</button>
-                                <button onClick={() => quickStatus(s.id, 'rescheduled')} className="text-xs bg-amber-900/40 text-amber-400 border border-amber-800 px-3 py-1 rounded-full">נדחה</button>
-                              </div>
-                            )}
+                            <div className="flex gap-2 mt-2 flex-wrap">
+                              {s.status === 'planned' ? (
+                                <>
+                                  <button onClick={() => quickStatus(s.id, 'done')} className="text-xs bg-emerald-900/40 text-emerald-400 border border-emerald-800 px-3 py-1 rounded-full">בוצע</button>
+                                  <button onClick={() => quickStatus(s.id, 'skipped')} className="text-xs bg-red-900/40 text-red-400 border border-red-800 px-3 py-1 rounded-full">פוספס</button>
+                                  <button onClick={() => quickStatus(s.id, 'rescheduled')} className="text-xs bg-amber-900/40 text-amber-400 border border-amber-800 px-3 py-1 rounded-full">נדחה</button>
+                                </>
+                              ) : (
+                                <button onClick={() => quickStatus(s.id, 'planned')} className="text-xs bg-slate-700 text-slate-300 border border-slate-600 px-3 py-1 rounded-full">↩ החזר למתוכנן</button>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
