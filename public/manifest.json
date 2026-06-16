@@ -1,6 +1,6 @@
 {
   "name": "מעקב ריצה אישי",
-  "short_name": "ריצה",
+  "short_name": "מעקב ריצה",
   "description": "אפליקציית מעקב ריצה – תוכנית 4 חודשים מ-0 ל-15 ק\"מ",
   "start_url": "/",
   "display": "standalone",
