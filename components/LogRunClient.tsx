@@ -1,0 +1,189 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+
+type Session = {
+  id: string
+  dayLabel: string
+  plannedDate: string
+  targetKm: number
+}
+
+function formatPace(dist: string, dur: string) {
+  const d = parseFloat(dist)
+  const m = parseFloat(dur)
+  if (!d || !m || d === 0) return null
+  const pace = m / d
+  const min = Math.floor(pace)
+  const sec = Math.round((pace - min) * 60)
+  return `${min}:${sec.toString().padStart(2, '0')} דק'/ק"מ`
+}
+
+export default function LogRunClient({ plannedSessions }: { plannedSessions: Session[] }) {
+  const router = useRouter()
+  const today = new Date().toISOString().slice(0, 10)
+
+  const [form, setForm] = useState({
+    date: today,
+    distanceKm: '',
+    durationMin: '',
+    feeling: '',
+    notes: '',
+    planSessionId: '',
+  })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+
+  const pace = formatPace(form.distanceKm, form.durationMin)
+
+  function set(key: string, value: string) {
+    setForm(f => ({ ...f, [key]: value }))
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!form.distanceKm || !form.durationMin) {
+      setError('יש למלא מרחק וזמן')
+      return
+    }
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/runs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) throw new Error('שגיאה בשמירה')
+      setSuccess(true)
+      setTimeout(() => {
+        router.push('/history')
+        router.refresh()
+      }, 1200)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'שגיאה')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form onSubmit={submit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">תאריך</label>
+        <input
+          type="date"
+          value={form.date}
+          onChange={e => set('date', e.target.value)}
+          className="w-full border border-slate-200 rounded-xl px-4 py-3 text-base"
+          required
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">מרחק (ק&quot;מ)</label>
+          <input
+            type="number"
+            step="0.1"
+            min="0"
+            value={form.distanceKm}
+            onChange={e => set('distanceKm', e.target.value)}
+            placeholder="0.0"
+            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-base"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">זמן (דקות)</label>
+          <input
+            type="number"
+            step="0.5"
+            min="0"
+            value={form.durationMin}
+            onChange={e => set('durationMin', e.target.value)}
+            placeholder="0"
+            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-base"
+            required
+          />
+        </div>
+      </div>
+
+      {pace && (
+        <div className="bg-blue-50 rounded-xl px-4 py-3 text-center">
+          <p className="text-xs text-blue-500 mb-0.5">קצב מחושב</p>
+          <p className="text-xl font-bold text-blue-700">{pace}</p>
+        </div>
+      )}
+
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">תחושה (1–10)</label>
+        <div className="flex gap-2 flex-wrap">
+          {[1,2,3,4,5,6,7,8,9,10].map(n => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => set('feeling', form.feeling === String(n) ? '' : String(n))}
+              className={`w-9 h-9 rounded-full text-sm font-medium border transition-colors ${
+                form.feeling === String(n)
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-slate-600 border-slate-200'
+              }`}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {plannedSessions.length > 0 && (
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">קישור לסשן מהתוכנית (אופציונלי)</label>
+          <select
+            value={form.planSessionId}
+            onChange={e => set('planSessionId', e.target.value)}
+            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-base"
+          >
+            <option value="">ללא קישור</option>
+            {plannedSessions.map(s => (
+              <option key={s.id} value={s.id}>
+                {new Date(s.plannedDate).toLocaleDateString('he-IL')} — {s.dayLabel} ({s.targetKm} ק&quot;מ)
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">הערות</label>
+        <textarea
+          value={form.notes}
+          onChange={e => set('notes', e.target.value)}
+          placeholder="איך הרגשת, מה עבד, מה היה קשה..."
+          rows={3}
+          className="w-full border border-slate-200 rounded-xl px-4 py-3 text-base resize-none"
+        />
+      </div>
+
+      {error && (
+        <div className="bg-red-50 text-red-700 rounded-xl px-4 py-3 text-sm">{error}</div>
+      )}
+
+      {success && (
+        <div className="bg-green-50 text-green-700 rounded-xl px-4 py-3 text-sm font-medium text-center">
+          הריצה נשמרה בהצלחה
+        </div>
+      )}
+
+      <button
+        type="submit"
+        disabled={saving || success}
+        className="w-full bg-blue-600 text-white rounded-xl py-4 font-semibold text-base shadow-sm disabled:opacity-60 transition-colors"
+      >
+        {saving ? 'שומר...' : 'שמור ריצה'}
+      </button>
+    </form>
+  )
+}

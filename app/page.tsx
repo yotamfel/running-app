@@ -1,65 +1,113 @@
-import Image from "next/image";
+import { prisma } from '@/lib/prisma'
+import BottomNav from '@/components/BottomNav'
+import DashboardClient from '@/components/DashboardClient'
 
-export default function Home() {
+export const dynamic = 'force-dynamic'
+
+function formatDate(d: Date) {
+  return new Date(d).toLocaleDateString('he-IL', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
+}
+
+function formatPace(pace: number) {
+  const min = Math.floor(pace)
+  const sec = Math.round((pace - min) * 60)
+  return `${min}:${sec.toString().padStart(2, '0')} דק'/ק"מ`
+}
+
+export default async function HomePage() {
+  const now = new Date()
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+
+  const [sessions, runs, weekRuns] = await Promise.all([
+    prisma.planSession.findMany({ orderBy: { plannedDate: 'asc' } }),
+    prisma.runLog.findMany({ orderBy: { date: 'desc' }, take: 3 }),
+    prisma.runLog.findMany({
+      where: { date: { gte: weekAgo } },
+    }),
+  ])
+
+  const nextSession = sessions.find(
+    s => s.status === 'planned' && new Date(s.plannedDate) >= now
+  )
+
+  const pastSessions = sessions.filter(s => new Date(s.plannedDate) < now)
+  const doneSessions = pastSessions.filter(s => s.status === 'done').length
+  const adherencePercent =
+    pastSessions.length > 0 ? Math.round((doneSessions / pastSessions.length) * 100) : 0
+
+  const weekKm = weekRuns.reduce((sum, r) => sum + r.distanceKm, 0)
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen pb-20">
+      <div className="bg-blue-600 text-white px-4 pt-10 pb-8">
+        <h1 className="text-2xl font-bold">מעקב ריצה</h1>
+        <p className="text-blue-100 mt-1 text-sm">תוכנית 4 חודשים — מ-0 ל-15 ק&quot;מ</p>
+      </div>
+
+      <div className="px-4 -mt-4 space-y-4 max-w-lg mx-auto">
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white rounded-xl p-3 shadow-sm text-center">
+            <p className="text-2xl font-bold text-blue-600">{weekKm.toFixed(1)}</p>
+            <p className="text-xs text-slate-500">ק&quot;מ השבוע</p>
+          </div>
+          <div className="bg-white rounded-xl p-3 shadow-sm text-center">
+            <p className="text-2xl font-bold text-green-600">{adherencePercent}%</p>
+            <p className="text-xs text-slate-500">עמידה בתוכנית</p>
+          </div>
+          <div className="bg-white rounded-xl p-3 shadow-sm text-center">
+            <p className="text-2xl font-bold text-purple-600">{doneSessions}</p>
+            <p className="text-xs text-slate-500">ריצות בוצעו</p>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+
+        {/* Next session */}
+        {nextSession && (
+          <div className="bg-white rounded-xl p-4 shadow-sm border-r-4 border-blue-500">
+            <p className="text-xs text-slate-500 mb-1">האימון הבא</p>
+            <p className="font-bold text-lg text-slate-800">{nextSession.dayLabel}</p>
+            <p className="text-blue-600 font-medium">{nextSession.targetKm} ק&quot;מ</p>
+            <p className="text-sm text-slate-500 mt-1">{formatDate(nextSession.plannedDate)}</p>
+            {nextSession.methodNote && (
+              <p className="text-xs text-slate-400 mt-2">{nextSession.methodNote}</p>
+            )}
+          </div>
+        )}
+
+        {/* AI Feedback button */}
+        <DashboardClient />
+
+        {/* Recent runs */}
+        {runs.length > 0 && (
+          <div className="bg-white rounded-xl p-4 shadow-sm">
+            <p className="text-sm font-semibold text-slate-700 mb-3">ריצות אחרונות</p>
+            <div className="space-y-2">
+              {runs.map(run => (
+                <div key={run.id} className="flex justify-between items-center py-2 border-b border-slate-100 last:border-0">
+                  <div>
+                    <p className="font-medium text-sm">{run.distanceKm} ק&quot;מ</p>
+                    <p className="text-xs text-slate-500">
+                      {new Date(run.date).toLocaleDateString('he-IL')}
+                    </p>
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm text-slate-600">{formatPace(run.paceMinPerKm)}</p>
+                    {run.feeling && (
+                      <p className="text-xs text-slate-400">תחושה: {run.feeling}/10</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <BottomNav />
     </div>
-  );
+  )
 }

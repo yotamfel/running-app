@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model PlanSession {
+  id          String   @id @default(cuid())
+  monthNumber Int
+  weekNumber  Int
+  dayLabel    String
+  plannedDate DateTime
+  targetKm    Float
+  methodNote  String?
+  status      String   @default("planned")
+  linkedRunId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model RunLog {
+  id            String   @id @default(cuid())
+  date          DateTime
+  distanceKm    Float
+  durationMin   Float
+  paceMinPerKm  Float
+  feeling       Int?
+  notes         String?
+  planSessionId String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
