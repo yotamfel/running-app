@@ -73,12 +73,24 @@ function assessRun(temp: number, wind: number, rain: number, code: number): RunA
   return { label: 'תנאים טובים', detail: `${temp}° · ${Math.round(wind)} קמ"ש רוח · ${rain}% גשם`, color: 'text-emerald-400', bg: 'bg-emerald-900/20', border: 'border-emerald-800' }
 }
 
-function findHourIndex(times: string[], offsetHours: number): number {
-  const target = new Date(Date.now() + offsetHours * 60 * 60 * 1000)
-  target.setMinutes(0, 0, 0)
-  const targetStr = target.toISOString().slice(0, 13)
-  const idx = times.findIndex(t => t.startsWith(targetStr))
+function findHourIndex(times: string[], targetHour: number, targetDate?: string): number {
+  const prefix = targetDate
+    ? `${targetDate}T${String(targetHour).padStart(2, '0')}`
+    : (() => {
+        const d = new Date()
+        const y = d.getFullYear()
+        const m = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        return `${y}-${m}-${day}T${String(targetHour).padStart(2, '0')}`
+      })()
+  const idx = times.findIndex(t => t.startsWith(prefix))
   return idx >= 0 ? idx : 0
+}
+
+function defaultPickerTime(): string {
+  const d = new Date()
+  d.setHours(d.getHours() + 2)
+  return `${String(d.getHours()).padStart(2, '0')}:00`
 }
 
 const DAY_NAMES = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳']
@@ -86,6 +98,7 @@ const DAY_NAMES = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳']
 export default function WeatherWidget() {
   const [weather, setWeather] = useState<Weather | null>(null)
   const [error, setError] = useState(false)
+  const [pickerTime, setPickerTime] = useState<string>(defaultPickerTime)
 
   useEffect(() => {
     fetch(
@@ -112,18 +125,29 @@ export default function WeatherWidget() {
   }
 
   const c = weather.current
-  const in2hIdx = findHourIndex(weather.hourly.time, 2)
-  const in2h = {
-    temp: Math.round(weather.hourly.temperature_2m[in2hIdx]),
-    rain: weather.hourly.precipitation_probability[in2hIdx] ?? 0,
-    wind: weather.hourly.wind_speed_10m[in2hIdx] ?? 0,
-    code: weather.hourly.weather_code[in2hIdx] ?? 0,
+
+  // Parse picked hour and find index in hourly array (today's date by default)
+  const pickedHour = parseInt(pickerTime.split(':')[0], 10)
+  const nowHour = new Date().getHours()
+  // If picked hour is earlier than now, it means tomorrow
+  const daysOffset = pickedHour < nowHour ? 1 : 0
+  const targetDate = (() => {
+    const d = new Date()
+    d.setDate(d.getDate() + daysOffset)
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  })()
+
+  const hourIdx = findHourIndex(weather.hourly.time, pickedHour, targetDate)
+  const picked = {
+    temp: Math.round(weather.hourly.temperature_2m[hourIdx] ?? 0),
+    rain: weather.hourly.precipitation_probability[hourIdx] ?? 0,
+    wind: weather.hourly.wind_speed_10m[hourIdx] ?? 0,
+    code: weather.hourly.weather_code[hourIdx] ?? 0,
   }
 
-  const in2hTime = new Date(Date.now() + 2 * 60 * 60 * 1000)
-  const in2hLabel = in2hTime.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false })
+  const assessment = assessRun(picked.temp, picked.wind, picked.rain, picked.code)
 
-  const assessment = assessRun(in2h.temp, in2h.wind, in2h.rain, in2h.code)
+  const timeLabel = `${String(pickedHour).padStart(2, '0')}:00${daysOffset > 0 ? ' (מחר)' : ''}`
 
   const forecast = weather.daily.time.slice(1, 4).map((t, i) => {
     const idx = i + 1
@@ -158,14 +182,31 @@ export default function WeatherWidget() {
         </div>
       </div>
 
-      {/* +2h training assessment */}
+      {/* Time picker + assessment */}
       <div className={`mx-4 mb-3 rounded-xl border px-4 py-3 ${assessment.bg} ${assessment.border}`}>
-        <div className="flex items-start justify-between mb-1">
-          <p className="text-xs text-slate-400">אימון בעוד שעתיים ({in2hLabel})</p>
-          <span className="text-lg">{wmoIcon(in2h.code)}</span>
+        {/* Header row with picker */}
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs text-slate-400">מתי אתה רוצה לרוץ?</p>
+          <input
+            type="time"
+            value={pickerTime}
+            onChange={e => setPickerTime(e.target.value)}
+            step={3600}
+            className="bg-slate-700 border border-slate-600 rounded-lg px-2 py-1 text-sm text-white text-center focus:outline-none focus:border-indigo-500"
+            style={{ direction: 'ltr', minWidth: '5rem' }}
+          />
         </div>
-        <p className={`text-base font-bold ${assessment.color}`}>{assessment.label}</p>
-        <p className="text-xs text-slate-400 mt-0.5">{assessment.detail}</p>
+        {/* Result */}
+        <div className="flex items-start justify-between">
+          <div>
+            <p className={`text-base font-bold ${assessment.color}`}>{assessment.label}</p>
+            <p className="text-xs text-slate-400 mt-0.5">{assessment.detail}</p>
+          </div>
+          <div className="flex flex-col items-end gap-0.5">
+            <span className="text-xl">{wmoIcon(picked.code)}</span>
+            <p className="text-xs text-slate-400">{timeLabel}</p>
+          </div>
+        </div>
       </div>
 
       {/* 3-day forecast */}
