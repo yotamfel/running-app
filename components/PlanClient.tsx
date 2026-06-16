@@ -67,10 +67,12 @@ export default function PlanClient({ initialSessions }: { initialSessions: Sessi
   }
 
   async function quickStatus(id: string, status: string) {
+    const body: Record<string, unknown> = { status }
+    if (status === 'planned') body.linkedRunId = null
     const res = await fetch(`/api/plan/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify(body),
     })
     if (res.ok) {
       const updated = await res.json()
