@@ -1,5 +1,7 @@
 'use client'
 
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 type Run = {
@@ -26,7 +28,24 @@ const tooltipStyle = {
   fontSize: '12px',
 }
 
-export default function HistoryChart({ runs }: { runs: Run[] }) {
+export default function HistoryChart({ runs: initialRuns }: { runs: Run[] }) {
+  const [runs, setRuns] = useState(initialRuns)
+  const [deleting, setDeleting] = useState<string | null>(null)
+  const [confirmId, setConfirmId] = useState<string | null>(null)
+  const router = useRouter()
+
+  async function deleteRun(id: string) {
+    setDeleting(id)
+    try {
+      await fetch(`/api/runs/${id}`, { method: 'DELETE' })
+      setRuns(prev => prev.filter(r => r.id !== id))
+      setConfirmId(null)
+      router.refresh()
+    } finally {
+      setDeleting(null)
+    }
+  }
+
   const chartData = [...runs].reverse().map(r => ({
     date: new Date(r.date).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' }),
     'מרחק': r.distanceKm,
@@ -70,18 +89,47 @@ export default function HistoryChart({ runs }: { runs: Run[] }) {
           <p className="text-sm font-semibold text-slate-200">כל הריצות</p>
         </div>
         {runs.map(r => (
-          <div key={r.id} className="px-4 py-3 flex justify-between items-center">
-            <div>
-              <p className="font-medium text-sm text-white">{r.distanceKm} ק&quot;מ</p>
-              <p className="text-xs text-slate-400">
-                {new Date(r.date).toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
-              </p>
-              {r.notes && <p className="text-xs text-slate-500 mt-0.5 truncate max-w-[200px]">{r.notes}</p>}
-            </div>
-            <div className="text-left">
-              <p className="text-sm font-medium text-slate-300">{formatPace(r.paceMinPerKm)} דק&apos;/ק&quot;מ</p>
-              <p className="text-xs text-slate-500">{r.durationMin} דקות</p>
-              {r.feeling && <p className="text-xs text-slate-500">תחושה {r.feeling}/10</p>}
+          <div key={r.id} className="px-4 py-3">
+            <div className="flex justify-between items-start">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm text-white">{r.distanceKm} ק&quot;מ</p>
+                <p className="text-xs text-slate-400">
+                  {new Date(r.date).toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                </p>
+                {r.notes && <p className="text-xs text-slate-500 mt-0.5 truncate max-w-[200px]">{r.notes}</p>}
+              </div>
+              <div className="flex items-center gap-3 mr-2">
+                <div className="text-left">
+                  <p className="text-sm font-medium text-slate-300">{formatPace(r.paceMinPerKm)} דק&apos;/ק&quot;מ</p>
+                  <p className="text-xs text-slate-500">{r.durationMin} דקות</p>
+                  {r.feeling && <p className="text-xs text-slate-500">תחושה {r.feeling}/10</p>}
+                </div>
+                {confirmId === r.id ? (
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => deleteRun(r.id)}
+                      disabled={deleting === r.id}
+                      className="text-xs bg-red-900/60 text-red-300 border border-red-700 px-2 py-1 rounded-lg disabled:opacity-60"
+                    >
+                      {deleting === r.id ? '...' : 'מחק'}
+                    </button>
+                    <button
+                      onClick={() => setConfirmId(null)}
+                      className="text-xs bg-slate-700 text-slate-400 border border-slate-600 px-2 py-1 rounded-lg"
+                    >
+                      ביטול
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmId(r.id)}
+                    className="text-slate-600 hover:text-red-400 transition-colors p-1"
+                    title="מחק ריצה"
+                  >
+                    🗑️
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ))}

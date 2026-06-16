@@ -39,6 +39,10 @@ export async function PATCH(request: NextRequest, ctx: RouteContext<'/api/runs/[
 
 export async function DELETE(_req: NextRequest, ctx: RouteContext<'/api/runs/[id]'>) {
   const { id } = await ctx.params
+  await prisma.planSession.updateMany({
+    where: { linkedRunId: id },
+    data: { linkedRunId: null, status: 'planned' },
+  })
   await prisma.runLog.delete({ where: { id } })
   return new Response(null, { status: 204 })
 }
