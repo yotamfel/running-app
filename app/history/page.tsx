@@ -32,21 +32,21 @@ export default async function HistoryPage() {
 
   return (
     <div className="min-h-screen pb-24">
-      <div className="bg-blue-700 text-white px-4 pt-10 pb-6">
+      <div className="bg-slate-800 text-white px-4 pt-10 pb-6">
         <h1 className="text-xl font-bold">היסטוריה והתקדמות</h1>
         <div className="flex gap-6 mt-3">
           <div>
             <p className="text-2xl font-bold">{totalKm.toFixed(1)}</p>
-            <p className="text-blue-200 text-xs">סה&quot;כ ק&quot;מ</p>
+            <p className="text-slate-400 text-xs">סה&quot;כ ק&quot;מ</p>
           </div>
           <div>
             <p className="text-2xl font-bold">{runs.length}</p>
-            <p className="text-blue-200 text-xs">ריצות</p>
+            <p className="text-slate-400 text-xs">ריצות</p>
           </div>
           {runs.length > 0 && (
             <div>
               <p className="text-2xl font-bold">{formatPace(avgPace)}</p>
-              <p className="text-blue-200 text-xs">קצב ממוצע</p>
+              <p className="text-slate-400 text-xs">קצב ממוצע</p>
             </div>
           )}
         </div>

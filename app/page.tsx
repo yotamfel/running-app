@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import BottomNav from '@/components/BottomNav'
 import DashboardClient from '@/components/DashboardClient'
+import WeatherWidget from '@/components/WeatherWidget'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,47 +42,68 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen pb-20">
-      <div className="bg-blue-700 text-white px-4 pt-10 pb-8">
+      <div className="bg-slate-800 text-white px-4 pt-10 pb-8 border-b border-slate-700">
         <h1 className="text-2xl font-bold">מעקב ריצה</h1>
-        <p className="text-blue-200 mt-1 text-sm">תוכנית 4 חודשים — מ-0 ל-15 ק&quot;מ</p>
+        <p className="text-slate-400 mt-1 text-sm">תוכנית 4 חודשים — מ-0 ל-15 ק&quot;מ</p>
       </div>
 
-      <div className="px-4 -mt-4 space-y-4 max-w-lg mx-auto">
+      <div className="px-4 mt-4 space-y-4 max-w-lg mx-auto">
+        {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-slate-800 rounded-xl p-3 shadow-sm text-center">
-            <p className="text-2xl font-bold text-blue-400">{weekKm.toFixed(1)}</p>
+          <div className="bg-slate-800 rounded-xl p-3 text-center border border-slate-700">
+            <p className="text-2xl font-bold text-indigo-400">{weekKm.toFixed(1)}</p>
             <p className="text-xs text-slate-400">ק&quot;מ השבוע</p>
           </div>
-          <div className="bg-slate-800 rounded-xl p-3 shadow-sm text-center">
-            <p className="text-2xl font-bold text-green-400">{adherencePercent}%</p>
+          <div className="bg-slate-800 rounded-xl p-3 text-center border border-slate-700">
+            <p className="text-2xl font-bold text-emerald-400">{adherencePercent}%</p>
             <p className="text-xs text-slate-400">עמידה בתוכנית</p>
           </div>
-          <div className="bg-slate-800 rounded-xl p-3 shadow-sm text-center">
-            <p className="text-2xl font-bold text-purple-400">{doneSessions}</p>
+          <div className="bg-slate-800 rounded-xl p-3 text-center border border-slate-700">
+            <p className="text-2xl font-bold text-violet-400">{doneSessions}</p>
             <p className="text-xs text-slate-400">ריצות בוצעו</p>
           </div>
         </div>
 
+        {/* Next session — detailed */}
         {nextSession && (
-          <div className="bg-slate-800 rounded-xl p-4 shadow-sm border-r-4 border-blue-500">
-            <p className="text-xs text-slate-400 mb-1">האימון הבא</p>
-            <p className="font-bold text-lg text-white">{nextSession.dayLabel}</p>
-            <p className="text-blue-400 font-medium">{nextSession.targetKm} ק&quot;מ</p>
-            <p className="text-sm text-slate-400 mt-1">{formatDate(nextSession.plannedDate)}</p>
+          <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+            <div className="border-r-4 border-indigo-500 px-4 py-3">
+              <p className="text-xs text-slate-400 mb-1">האימון הבא</p>
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="font-bold text-lg text-white">{nextSession.dayLabel}</p>
+                  <p className="text-indigo-400 font-semibold text-base">
+                    {nextSession.targetKm > 0 ? `${nextSession.targetKm} ק"מ` : 'אופציונלי'}
+                  </p>
+                  <p className="text-sm text-slate-400 mt-0.5">{formatDate(nextSession.plannedDate)}</p>
+                </div>
+                <span className="text-2xl mt-1">
+                  {nextSession.dayLabel.includes('ארוך') ? '🏃' : nextSession.dayLabel.includes('גמיש') ? '🔄' : '⚡'}
+                </span>
+              </div>
+            </div>
             {nextSession.methodNote && (
-              <p className="text-xs text-slate-500 mt-2">{nextSession.methodNote}</p>
+              <div className="bg-slate-700/40 border-t border-slate-700 px-4 py-3">
+                <p className="text-xs text-slate-300 font-medium mb-1">מה לעשות:</p>
+                <p className="text-sm text-slate-400 leading-6">{nextSession.methodNote}</p>
+              </div>
             )}
           </div>
         )}
 
+        {/* Weather */}
+        <WeatherWidget />
+
+        {/* AI Feedback */}
         <DashboardClient />
 
+        {/* Recent runs */}
         {runs.length > 0 && (
-          <div className="bg-slate-800 rounded-xl p-4 shadow-sm">
-            <p className="text-sm font-semibold text-slate-200 mb-3">ריצות אחרונות</p>
-            <div className="space-y-2">
+          <div className="bg-slate-800 rounded-xl border border-slate-700">
+            <p className="text-sm font-semibold text-slate-200 px-4 pt-3 pb-2">ריצות אחרונות</p>
+            <div className="divide-y divide-slate-700">
               {runs.map(run => (
-                <div key={run.id} className="flex justify-between items-center py-2 border-b border-slate-700 last:border-0">
+                <div key={run.id} className="flex justify-between items-center px-4 py-3">
                   <div>
                     <p className="font-medium text-sm text-white">{run.distanceKm} ק&quot;מ</p>
                     <p className="text-xs text-slate-400">

@@ -29,9 +29,9 @@ export default function DashboardClient() {
       <button
         onClick={getFeedback}
         disabled={loading}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-4 font-semibold text-base shadow-sm active:bg-blue-800 disabled:opacity-60 transition-colors"
+        className="w-full bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-200 rounded-xl py-4 font-semibold text-base disabled:opacity-60 transition-colors"
       >
-        {loading ? 'מנתח נתונים...' : 'משוב AI על ההתקדמות'}
+        {loading ? 'מנתח נתונים...' : '🤖 משוב AI על ההתקדמות'}
       </button>
 
       {error && (
@@ -40,7 +40,7 @@ export default function DashboardClient() {
 
       {open && feedback && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-end justify-center">
-          <div className="bg-slate-800 rounded-t-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
+          <div className="bg-slate-800 rounded-t-2xl w-full max-w-lg max-h-[80vh] flex flex-col border-t border-slate-700">
             <div className="flex justify-between items-center px-5 py-4 border-b border-slate-700">
               <h2 className="font-bold text-lg text-white">ניתוח נתוני ריצה</h2>
               <button

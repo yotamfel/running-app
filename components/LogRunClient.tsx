@@ -58,10 +58,7 @@ export default function LogRunClient({ plannedSessions }: { plannedSessions: Ses
       })
       if (!res.ok) throw new Error('שגיאה בשמירה')
       setSuccess(true)
-      setTimeout(() => {
-        router.push('/history')
-        router.refresh()
-      }, 1200)
+      setTimeout(() => { router.push('/history'); router.refresh() }, 1200)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'שגיאה')
     } finally {
@@ -69,59 +66,35 @@ export default function LogRunClient({ plannedSessions }: { plannedSessions: Ses
     }
   }
 
-  const inputClass = "w-full bg-slate-700 border border-slate-600 text-white rounded-xl px-4 py-3 text-base placeholder:text-slate-500"
+  const inputClass = "w-full bg-slate-700 border border-slate-600 text-white rounded-xl px-4 py-3 text-base placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
 
   return (
     <form onSubmit={submit} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-slate-300 mb-1">תאריך</label>
-        <input
-          type="date"
-          value={form.date}
-          onChange={e => set('date', e.target.value)}
-          className={inputClass}
-          required
-        />
+        <input type="date" value={form.date} onChange={e => set('date', e.target.value)} className={inputClass} required />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-1">מרחק (ק&quot;מ)</label>
-          <input
-            type="number"
-            step="0.1"
-            min="0"
-            value={form.distanceKm}
-            onChange={e => set('distanceKm', e.target.value)}
-            placeholder="0.0"
-            className={inputClass}
-            required
-          />
+          <input type="number" step="0.1" min="0" value={form.distanceKm} onChange={e => set('distanceKm', e.target.value)} placeholder="0.0" className={inputClass} required />
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-1">זמן (דקות)</label>
-          <input
-            type="number"
-            step="0.5"
-            min="0"
-            value={form.durationMin}
-            onChange={e => set('durationMin', e.target.value)}
-            placeholder="0"
-            className={inputClass}
-            required
-          />
+          <input type="number" step="0.5" min="0" value={form.durationMin} onChange={e => set('durationMin', e.target.value)} placeholder="0" className={inputClass} required />
         </div>
       </div>
 
       {pace && (
-        <div className="bg-blue-900/40 border border-blue-700 rounded-xl px-4 py-3 text-center">
-          <p className="text-xs text-blue-400 mb-0.5">קצב מחושב</p>
-          <p className="text-xl font-bold text-blue-300">{pace}</p>
+        <div className="bg-indigo-900/30 border border-indigo-800 rounded-xl px-4 py-3 text-center">
+          <p className="text-xs text-indigo-400 mb-0.5">קצב מחושב</p>
+          <p className="text-xl font-bold text-indigo-300">{pace}</p>
         </div>
       )}
 
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-1">תחושה (1–10)</label>
+        <label className="block text-sm font-medium text-slate-300 mb-2">תחושה (1–10)</label>
         <div className="flex gap-2 flex-wrap">
           {[1,2,3,4,5,6,7,8,9,10].map(n => (
             <button
@@ -130,7 +103,7 @@ export default function LogRunClient({ plannedSessions }: { plannedSessions: Ses
               onClick={() => set('feeling', form.feeling === String(n) ? '' : String(n))}
               className={`w-9 h-9 rounded-full text-sm font-medium border transition-colors ${
                 form.feeling === String(n)
-                  ? 'bg-blue-600 text-white border-blue-600'
+                  ? 'bg-indigo-600 text-white border-indigo-600'
                   : 'bg-slate-700 text-slate-300 border-slate-600'
               }`}
             >
@@ -143,11 +116,7 @@ export default function LogRunClient({ plannedSessions }: { plannedSessions: Ses
       {plannedSessions.length > 0 && (
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-1">קישור לסשן מהתוכנית (אופציונלי)</label>
-          <select
-            value={form.planSessionId}
-            onChange={e => set('planSessionId', e.target.value)}
-            className={inputClass}
-          >
+          <select value={form.planSessionId} onChange={e => set('planSessionId', e.target.value)} className={inputClass}>
             <option value="">ללא קישור</option>
             {plannedSessions.map(s => (
               <option key={s.id} value={s.id}>
@@ -160,30 +129,13 @@ export default function LogRunClient({ plannedSessions }: { plannedSessions: Ses
 
       <div>
         <label className="block text-sm font-medium text-slate-300 mb-1">הערות</label>
-        <textarea
-          value={form.notes}
-          onChange={e => set('notes', e.target.value)}
-          placeholder="איך הרגשת, מה עבד, מה היה קשה..."
-          rows={3}
-          className={`${inputClass} resize-none`}
-        />
+        <textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="איך הרגשת, מה עבד, מה היה קשה..." rows={3} className={`${inputClass} resize-none`} />
       </div>
 
-      {error && (
-        <div className="bg-red-900/40 text-red-300 rounded-xl px-4 py-3 text-sm border border-red-800">{error}</div>
-      )}
+      {error && <div className="bg-red-900/40 text-red-300 rounded-xl px-4 py-3 text-sm border border-red-800">{error}</div>}
+      {success && <div className="bg-emerald-900/40 text-emerald-300 rounded-xl px-4 py-3 text-sm font-medium text-center border border-emerald-800">הריצה נשמרה בהצלחה</div>}
 
-      {success && (
-        <div className="bg-green-900/40 text-green-300 rounded-xl px-4 py-3 text-sm font-medium text-center border border-green-800">
-          הריצה נשמרה בהצלחה
-        </div>
-      )}
-
-      <button
-        type="submit"
-        disabled={saving || success}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-4 font-semibold text-base shadow-sm disabled:opacity-60 transition-colors"
-      >
+      <button type="submit" disabled={saving || success} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-4 font-semibold text-base disabled:opacity-60 transition-colors">
         {saving ? 'שומר...' : 'שמור ריצה'}
       </button>
     </form>

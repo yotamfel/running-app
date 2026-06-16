@@ -3,7 +3,7 @@ import BottomNav from '@/components/BottomNav'
 export default function ExplanationsPage() {
   return (
     <div className="min-h-screen pb-24">
-      <div className="bg-blue-700 text-white px-4 pt-10 pb-6">
+      <div className="bg-slate-800 text-white px-4 pt-10 pb-6">
         <h1 className="text-xl font-bold">הסברים ורציונל</h1>
       </div>
 
@@ -21,9 +21,9 @@ export default function ExplanationsPage() {
           <h2 className="font-bold text-white text-base mb-3">מבנה שבועי</h2>
           <div className="space-y-2">
             {[
-              { day: 'רביעי', type: 'אימון קצר 1', color: 'bg-blue-900/40 text-blue-300 border border-blue-800' },
+              { day: 'רביעי', type: 'אימון קצר 1', color: 'bg-indigo-900/40 text-indigo-300 border border-indigo-800' },
               { day: 'חמישי', type: 'יום גמיש / השלמה', color: 'bg-amber-900/40 text-amber-300 border border-amber-800' },
-              { day: 'שבת', type: 'אימון קצר 2', color: 'bg-blue-900/40 text-blue-300 border border-blue-800' },
+              { day: 'שבת', type: 'אימון קצר 2', color: 'bg-indigo-900/40 text-indigo-300 border border-indigo-800' },
               { day: 'ראשון', type: 'מנוחה / גמיש', color: 'bg-slate-700 text-slate-400 border border-slate-600' },
               { day: 'שני', type: 'אימון ארוך', color: 'bg-green-900/40 text-green-300 border border-green-800' },
               { day: 'שלישי', type: 'מנוחה', color: 'bg-slate-700 text-slate-400 border border-slate-600' },
@@ -47,7 +47,7 @@ export default function ExplanationsPage() {
               { month: 'חודש 4', goal: 'גיבוש', date: 'עד 5.10.2026', desc: 'ביסוס ה-15 ק"מ, שיפור קצב' },
             ].map(({ month, goal, date, desc }) => (
               <div key={month} className="flex gap-3 items-start">
-                <div className="bg-blue-600 text-white text-xs px-2 py-1 rounded-lg font-medium shrink-0 mt-0.5">{month}</div>
+                <div className="bg-indigo-600 text-white text-xs px-2 py-1 rounded-lg font-medium shrink-0 mt-0.5">{month}</div>
                 <div>
                   <p className="font-medium text-sm text-white">{goal} — {date}</p>
                   <p className="text-xs text-slate-400">{desc}</p>

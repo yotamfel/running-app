@@ -18,9 +18,9 @@ export default async function PlanPage() {
 
   return (
     <div className="min-h-screen pb-24">
-      <div className="bg-blue-700 text-white px-4 pt-10 pb-6">
+      <div className="bg-slate-800 text-white px-4 pt-10 pb-6">
         <h1 className="text-xl font-bold">תוכנית 4 חודשים</h1>
-        <p className="text-blue-200 text-sm mt-1">17.6.2026 – 5.10.2026</p>
+        <p className="text-slate-400 text-sm mt-1">17.6.2026 – 5.10.2026</p>
       </div>
       <div className="px-4 py-4 max-w-lg mx-auto">
         <PlanClient initialSessions={serialized} />

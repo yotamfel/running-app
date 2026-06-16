@@ -23,7 +23,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_COLORS: Record<string, string> = {
   planned: 'bg-slate-700 text-slate-300',
-  done: 'bg-green-900/50 text-green-400',
+  done: 'bg-emerald-900/50 text-emerald-400',
   skipped: 'bg-red-900/50 text-red-400',
   rescheduled: 'bg-amber-900/50 text-amber-400',
 }
@@ -33,8 +33,7 @@ export default function PlanClient({ initialSessions }: { initialSessions: Sessi
   const [editing, setEditing] = useState<string | null>(null)
   const [editData, setEditData] = useState<Partial<Session>>({})
   const [saving, setSaving] = useState(false)
-
-  const months = [1, 2, 3, 4]
+  const [expanded, setExpanded] = useState<string | null>(null)
 
   function startEdit(s: Session) {
     setEditing(s.id)
@@ -54,7 +53,7 @@ export default function PlanClient({ initialSessions }: { initialSessions: Sessi
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editData),
       })
-      if (!res.ok) throw new Error('שגיאה בשמירה')
+      if (!res.ok) throw new Error('שגיאה')
       const updated = await res.json()
       setSessions(prev => prev.map(s => s.id === id ? { ...s, ...updated } : s))
       setEditing(null)
@@ -75,26 +74,30 @@ export default function PlanClient({ initialSessions }: { initialSessions: Sessi
     }
   }
 
+  const inputClass = "w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm mt-1 focus:outline-none focus:border-indigo-500"
+
   return (
     <div className="space-y-6">
-      {months.map(month => {
+      {[1,2,3,4].map(month => {
         const monthSessions = sessions.filter(s => s.monthNumber === month)
         if (!monthSessions.length) return null
-
         const weeks = [...new Set(monthSessions.map(s => s.weekNumber))].sort((a, b) => a - b)
 
         return (
-          <div key={month} className="bg-slate-800 rounded-xl overflow-hidden">
-            <div className="bg-blue-700 text-white px-4 py-3">
+          <div key={month} className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
+            <div className="bg-slate-700 text-white px-4 py-3 flex items-center justify-between">
               <h2 className="font-bold">חודש {month}</h2>
+              <span className="text-xs text-slate-400">
+                {monthSessions.filter(s => s.status === 'done').length}/{monthSessions.filter(s => s.targetKm > 0).length} בוצעו
+              </span>
             </div>
-            <div className="divide-y divide-slate-700">
+            <div className="divide-y divide-slate-700/50">
               {weeks.map(week => {
                 const weekSessions = monthSessions.filter(s => s.weekNumber === week)
                 return (
                   <div key={week}>
-                    <div className="px-4 py-2 bg-slate-700/50">
-                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">שבוע {week}</p>
+                    <div className="px-4 py-2 bg-slate-700/30">
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">שבוע {week}</p>
                     </div>
                     {weekSessions.map(s => (
                       <div key={s.id} className="px-4 py-3">
@@ -103,59 +106,22 @@ export default function PlanClient({ initialSessions }: { initialSessions: Sessi
                             <div className="grid grid-cols-2 gap-3">
                               <div>
                                 <label className="text-xs text-slate-400">תאריך</label>
-                                <input
-                                  type="date"
-                                  value={editData.plannedDate as string}
-                                  onChange={e => setEditData(d => ({ ...d, plannedDate: e.target.value }))}
-                                  className="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm mt-1"
-                                />
+                                <input type="date" value={editData.plannedDate as string} onChange={e => setEditData(d => ({ ...d, plannedDate: e.target.value }))} className={inputClass} />
                               </div>
                               <div>
                                 <label className="text-xs text-slate-400">מרחק (ק&quot;מ)</label>
-                                <input
-                                  type="number"
-                                  step="0.5"
-                                  value={editData.targetKm as number}
-                                  onChange={e => setEditData(d => ({ ...d, targetKm: parseFloat(e.target.value) }))}
-                                  className="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm mt-1"
-                                />
+                                <input type="number" step="0.5" value={editData.targetKm as number} onChange={e => setEditData(d => ({ ...d, targetKm: parseFloat(e.target.value) }))} className={inputClass} />
                               </div>
                             </div>
                             <div>
                               <label className="text-xs text-slate-400">סטטוס</label>
-                              <select
-                                value={editData.status as string}
-                                onChange={e => setEditData(d => ({ ...d, status: e.target.value }))}
-                                className="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm mt-1"
-                              >
-                                {Object.entries(STATUS_LABELS).map(([v, l]) => (
-                                  <option key={v} value={v}>{l}</option>
-                                ))}
+                              <select value={editData.status as string} onChange={e => setEditData(d => ({ ...d, status: e.target.value }))} className={inputClass}>
+                                {Object.entries(STATUS_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                               </select>
                             </div>
-                            <div>
-                              <label className="text-xs text-slate-400">הערת שיטה</label>
-                              <input
-                                type="text"
-                                value={editData.methodNote as string}
-                                onChange={e => setEditData(d => ({ ...d, methodNote: e.target.value }))}
-                                className="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm mt-1"
-                              />
-                            </div>
                             <div className="flex gap-2">
-                              <button
-                                onClick={() => saveEdit(s.id)}
-                                disabled={saving}
-                                className="flex-1 bg-blue-600 text-white rounded-lg py-2 text-sm font-medium disabled:opacity-60"
-                              >
-                                שמור
-                              </button>
-                              <button
-                                onClick={() => setEditing(null)}
-                                className="flex-1 bg-slate-700 text-slate-300 rounded-lg py-2 text-sm font-medium"
-                              >
-                                ביטול
-                              </button>
+                              <button onClick={() => saveEdit(s.id)} disabled={saving} className="flex-1 bg-indigo-600 text-white rounded-lg py-2 text-sm font-medium disabled:opacity-60">שמור</button>
+                              <button onClick={() => setEditing(null)} className="flex-1 bg-slate-700 text-slate-300 rounded-lg py-2 text-sm font-medium">ביטול</button>
                             </div>
                           </div>
                         ) : (
@@ -172,37 +138,28 @@ export default function PlanClient({ initialSessions }: { initialSessions: Sessi
                                   {new Date(s.plannedDate).toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'short' })}
                                   {s.targetKm > 0 && ` · ${s.targetKm} ק"מ`}
                                 </p>
-                                {s.methodNote && (
-                                  <p className="text-xs text-slate-500 mt-1">{s.methodNote}</p>
-                                )}
                               </div>
-                              <button
-                                onClick={() => startEdit(s)}
-                                className="text-slate-500 p-1 text-sm ml-2 hover:text-slate-300"
-                              >
-                                ✏️
-                              </button>
+                              <div className="flex gap-1 mr-2">
+                                {s.methodNote && (
+                                  <button onClick={() => setExpanded(expanded === s.id ? null : s.id)} className="text-slate-500 hover:text-slate-300 text-xs px-2 py-1">
+                                    {expanded === s.id ? '▲' : 'פרטים'}
+                                  </button>
+                                )}
+                                <button onClick={() => startEdit(s)} className="text-slate-500 hover:text-slate-300 p-1">✏️</button>
+                              </div>
                             </div>
+
+                            {expanded === s.id && s.methodNote && (
+                              <div className="mt-2 bg-slate-700/40 rounded-lg px-3 py-2 border border-slate-600">
+                                <p className="text-xs text-slate-300 leading-5">{s.methodNote}</p>
+                              </div>
+                            )}
+
                             {s.status === 'planned' && (
                               <div className="flex gap-2 mt-2">
-                                <button
-                                  onClick={() => quickStatus(s.id, 'done')}
-                                  className="text-xs bg-green-900/40 text-green-400 border border-green-800 px-3 py-1 rounded-full"
-                                >
-                                  בוצע
-                                </button>
-                                <button
-                                  onClick={() => quickStatus(s.id, 'skipped')}
-                                  className="text-xs bg-red-900/40 text-red-400 border border-red-800 px-3 py-1 rounded-full"
-                                >
-                                  פוספס
-                                </button>
-                                <button
-                                  onClick={() => quickStatus(s.id, 'rescheduled')}
-                                  className="text-xs bg-amber-900/40 text-amber-400 border border-amber-800 px-3 py-1 rounded-full"
-                                >
-                                  נדחה
-                                </button>
+                                <button onClick={() => quickStatus(s.id, 'done')} className="text-xs bg-emerald-900/40 text-emerald-400 border border-emerald-800 px-3 py-1 rounded-full">בוצע</button>
+                                <button onClick={() => quickStatus(s.id, 'skipped')} className="text-xs bg-red-900/40 text-red-400 border border-red-800 px-3 py-1 rounded-full">פוספס</button>
+                                <button onClick={() => quickStatus(s.id, 'rescheduled')} className="text-xs bg-amber-900/40 text-amber-400 border border-amber-800 px-3 py-1 rounded-full">נדחה</button>
                               </div>
                             )}
                           </div>
