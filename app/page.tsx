@@ -34,7 +34,7 @@ export default async function HomePage() {
     s => s.status === 'planned' && new Date(s.plannedDate) >= now
   )
 
-  const pastSessions = sessions.filter(s => new Date(s.plannedDate) < now)
+  const pastSessions = sessions.filter(s => new Date(s.plannedDate) < now && s.status !== 'not_needed')
   const doneSessions = pastSessions.filter(s => s.status === 'done').length
   const adherencePercent =
     pastSessions.length > 0 ? Math.round((doneSessions / pastSessions.length) * 100) : 0

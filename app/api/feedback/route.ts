@@ -54,7 +54,7 @@ ${JSON.stringify(recentRuns, null, 2)}
 `
 
   if (planActive) {
-    const totalSessions = sessions.filter(s => s.status !== 'planned' || new Date(s.plannedDate) < now).length
+    const totalSessions = sessions.filter(s => s.status !== 'not_needed' && (s.status !== 'planned' || new Date(s.plannedDate) < now)).length
     const doneSessions = sessions.filter(s => s.status === 'done').length
     const skippedSessions = sessions.filter(s => s.status === 'skipped').length
     const adherencePercent = totalSessions > 0 ? Math.round((doneSessions / totalSessions) * 100) : 0

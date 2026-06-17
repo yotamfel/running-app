@@ -19,6 +19,7 @@ const STATUS_LABELS: Record<string, string> = {
   done: 'בוצע',
   skipped: 'פוספס',
   rescheduled: 'נדחה',
+  not_needed: 'לא נצרך',
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -26,6 +27,7 @@ const STATUS_COLORS: Record<string, string> = {
   done: 'bg-emerald-900/50 text-emerald-400',
   skipped: 'bg-red-900/50 text-red-400',
   rescheduled: 'bg-amber-900/50 text-amber-400',
+  not_needed: 'bg-sky-900/50 text-sky-400',
 }
 
 export default function PlanClient({ initialSessions }: { initialSessions: Session[] }) {
@@ -58,8 +60,13 @@ export default function PlanClient({ initialSessions }: { initialSessions: Sessi
         body: JSON.stringify(payload),
       })
       if (!res.ok) throw new Error('שגיאה')
-      const updated = await res.json()
-      setSessions(prev => prev.map(s => s.id === id ? { ...s, ...updated } : s))
+      const data = await res.json()
+      const { alsoUpdated, ...updated } = data
+      setSessions(prev => prev.map(s => {
+        if (s.id === id) return { ...s, ...updated }
+        const also = alsoUpdated?.find((u: Session) => u.id === s.id)
+        return also ? { ...s, ...also } : s
+      }))
       setEditing(null)
     } finally {
       setSaving(false)
@@ -75,8 +82,13 @@ export default function PlanClient({ initialSessions }: { initialSessions: Sessi
       body: JSON.stringify(body),
     })
     if (res.ok) {
-      const updated = await res.json()
-      setSessions(prev => prev.map(s => s.id === id ? { ...s, ...updated } : s))
+      const data = await res.json()
+      const { alsoUpdated, ...updated } = data
+      setSessions(prev => prev.map(s => {
+        if (s.id === id) return { ...s, ...updated }
+        const also = alsoUpdated?.find((u: Session) => u.id === s.id)
+        return also ? { ...s, ...also } : s
+      }))
     }
   }
 
@@ -94,7 +106,7 @@ export default function PlanClient({ initialSessions }: { initialSessions: Sessi
             <div className="bg-slate-700 text-white px-4 py-3 flex items-center justify-between">
               <h2 className="font-bold">חודש {month}</h2>
               <span className="text-xs text-slate-400">
-                {monthSessions.filter(s => s.status === 'done').length}/{monthSessions.filter(s => s.targetKm > 0).length} בוצעו
+                {monthSessions.filter(s => s.status === 'done').length}/{monthSessions.filter(s => s.targetKm > 0 && s.status !== 'not_needed').length} בוצעו
               </span>
             </div>
             <div className="divide-y divide-slate-700/50">
@@ -182,6 +194,9 @@ export default function PlanClient({ initialSessions }: { initialSessions: Sessi
                                   <button onClick={() => quickStatus(s.id, 'done')} className="text-xs bg-emerald-900/40 text-emerald-400 border border-emerald-800 px-3 py-1 rounded-full">בוצע</button>
                                   <button onClick={() => quickStatus(s.id, 'skipped')} className="text-xs bg-red-900/40 text-red-400 border border-red-800 px-3 py-1 rounded-full">פוספס</button>
                                   <button onClick={() => quickStatus(s.id, 'rescheduled')} className="text-xs bg-amber-900/40 text-amber-400 border border-amber-800 px-3 py-1 rounded-full">נדחה</button>
+                                  {s.dayLabel === 'יום גמיש' && (
+                                    <button onClick={() => quickStatus(s.id, 'not_needed')} className="text-xs bg-sky-900/40 text-sky-400 border border-sky-800 px-3 py-1 rounded-full">לא נצרך</button>
+                                  )}
                                 </>
                               ) : (
                                 <button onClick={() => quickStatus(s.id, 'planned')} className="text-xs bg-slate-700 text-slate-300 border border-slate-600 px-3 py-1 rounded-full">↩ החזר למתוכנן</button>

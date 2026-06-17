@@ -27,10 +27,22 @@ export async function POST(request: NextRequest) {
   })
 
   if (body.planSessionId) {
-    await prisma.planSession.update({
+    const session = await prisma.planSession.update({
       where: { id: body.planSessionId },
       data: { status: 'done', linkedRunId: run.id },
     })
+
+    if (session.dayLabel === 'אימון קצר 1') {
+      const flexDay = await prisma.planSession.findFirst({
+        where: { weekNumber: session.weekNumber, dayLabel: 'יום גמיש', status: 'planned' },
+      })
+      if (flexDay) {
+        await prisma.planSession.update({
+          where: { id: flexDay.id },
+          data: { status: 'not_needed' },
+        })
+      }
+    }
   }
 
   return Response.json(run, { status: 201 })

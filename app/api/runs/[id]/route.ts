@@ -39,10 +39,20 @@ export async function PATCH(request: NextRequest, ctx: RouteContext<'/api/runs/[
 
 export async function DELETE(_req: NextRequest, ctx: RouteContext<'/api/runs/[id]'>) {
   const { id } = await ctx.params
+
+  const linkedSession = await prisma.planSession.findFirst({ where: { linkedRunId: id } })
   await prisma.planSession.updateMany({
     where: { linkedRunId: id },
     data: { linkedRunId: null, status: 'planned' },
   })
+
+  if (linkedSession?.dayLabel === 'אימון קצר 1') {
+    await prisma.planSession.updateMany({
+      where: { weekNumber: linkedSession.weekNumber, dayLabel: 'יום גמיש', status: 'not_needed' },
+      data: { status: 'planned' },
+    })
+  }
+
   await prisma.runLog.delete({ where: { id } })
   return new Response(null, { status: 204 })
 }

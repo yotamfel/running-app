@@ -22,7 +22,37 @@ export async function PATCH(request: NextRequest, ctx: RouteContext<'/api/plan/[
       ...(body.linkedRunId !== undefined && { linkedRunId: body.linkedRunId }),
     },
   })
-  return Response.json(updated)
+
+  const alsoUpdated = await autoUpdateFlexDay(updated)
+
+  return Response.json({ ...updated, alsoUpdated })
+}
+
+async function autoUpdateFlexDay(session: { dayLabel: string; weekNumber: number; status: string }) {
+  if (session.dayLabel !== 'אימון קצר 1') return []
+
+  const flexDay = await prisma.planSession.findFirst({
+    where: { weekNumber: session.weekNumber, dayLabel: 'יום גמיש' },
+  })
+  if (!flexDay) return []
+
+  if (session.status === 'done' && flexDay.status === 'planned') {
+    const updated = await prisma.planSession.update({
+      where: { id: flexDay.id },
+      data: { status: 'not_needed' },
+    })
+    return [updated]
+  }
+
+  if (session.status === 'planned' && flexDay.status === 'not_needed') {
+    const updated = await prisma.planSession.update({
+      where: { id: flexDay.id },
+      data: { status: 'planned' },
+    })
+    return [updated]
+  }
+
+  return []
 }
 
 export async function DELETE(_req: NextRequest, ctx: RouteContext<'/api/plan/[id]'>) {
