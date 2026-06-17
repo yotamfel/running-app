@@ -23,10 +23,11 @@ export default async function HomePage() {
   const now = new Date()
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
-  const [sessions, runs, weekRuns] = await Promise.all([
+  const [sessions, runs, weekRuns, allRuns] = await Promise.all([
     prisma.planSession.findMany({ orderBy: { plannedDate: 'asc' } }),
     prisma.runLog.findMany({ orderBy: { date: 'desc' }, take: 3 }),
     prisma.runLog.findMany({ where: { date: { gte: weekAgo } } }),
+    prisma.runLog.findMany(),
   ])
 
   const nextSession = sessions.find(
@@ -38,13 +39,18 @@ export default async function HomePage() {
   const adherencePercent =
     pastSessions.length > 0 ? Math.round((doneSessions / pastSessions.length) * 100) : 0
 
+  const planActive = !!nextSession
   const weekKm = weekRuns.reduce((sum, r) => sum + r.distanceKm, 0)
+  const totalKm = allRuns.reduce((sum, r) => sum + r.distanceKm, 0)
+  const totalRuns = allRuns.length
 
   return (
     <div className="min-h-screen pb-20">
       <div className="bg-slate-800 text-white px-4 pt-10 pb-8 border-b border-slate-700">
         <h1 className="text-2xl font-bold">מעקב ריצה</h1>
-        <p className="text-slate-400 mt-1 text-sm">תוכנית 4 חודשים — מ-0 ל-15 ק&quot;מ</p>
+        <p className="text-slate-400 mt-1 text-sm">
+          {planActive ? 'תוכנית 4 חודשים — מ-0 ל-15 ק"מ' : 'מעקב ריצה אישי'}
+        </p>
       </div>
 
       <div className="px-4 mt-4 space-y-4 max-w-lg mx-auto">
@@ -54,13 +60,20 @@ export default async function HomePage() {
             <p className="text-2xl font-bold text-indigo-400">{weekKm.toFixed(1)}</p>
             <p className="text-xs text-slate-400">ק&quot;מ השבוע</p>
           </div>
+          {planActive ? (
+            <div className="bg-slate-800 rounded-xl p-3 text-center border border-slate-700">
+              <p className="text-2xl font-bold text-emerald-400">{adherencePercent}%</p>
+              <p className="text-xs text-slate-400">עמידה בתוכנית</p>
+            </div>
+          ) : (
+            <div className="bg-slate-800 rounded-xl p-3 text-center border border-slate-700">
+              <p className="text-2xl font-bold text-emerald-400">{totalKm.toFixed(1)}</p>
+              <p className="text-xs text-slate-400">סה&quot;כ ק&quot;מ</p>
+            </div>
+          )}
           <div className="bg-slate-800 rounded-xl p-3 text-center border border-slate-700">
-            <p className="text-2xl font-bold text-emerald-400">{adherencePercent}%</p>
-            <p className="text-xs text-slate-400">עמידה בתוכנית</p>
-          </div>
-          <div className="bg-slate-800 rounded-xl p-3 text-center border border-slate-700">
-            <p className="text-2xl font-bold text-violet-400">{doneSessions}</p>
-            <p className="text-xs text-slate-400">ריצות בוצעו</p>
+            <p className="text-2xl font-bold text-violet-400">{totalRuns}</p>
+            <p className="text-xs text-slate-400">סה&quot;כ ריצות</p>
           </div>
         </div>
 
