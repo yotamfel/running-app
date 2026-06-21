@@ -30,9 +30,7 @@ export default async function HomePage() {
     prisma.runLog.findMany(),
   ])
 
-  const nextSession = sessions.find(
-    s => s.status === 'planned' && new Date(s.plannedDate) >= now
-  )
+  const nextSession = sessions.find(s => s.status === 'planned')
 
   const pastSessions = sessions.filter(s => new Date(s.plannedDate) < now && s.status !== 'not_needed')
   const doneSessions = pastSessions.filter(s => s.status === 'done').length

@@ -33,3 +33,10 @@ model RunLog {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
+
+model AiFeedback {
+  id        String   @id @default("singleton")
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

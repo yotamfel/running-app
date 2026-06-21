@@ -28,31 +28,63 @@ export async function PATCH(request: NextRequest, ctx: RouteContext<'/api/plan/[
   return Response.json({ ...updated, alsoUpdated })
 }
 
-async function autoUpdateFlexDay(session: { dayLabel: string; weekNumber: number; status: string }) {
-  if (session.dayLabel !== 'אימון קצר 1') return []
+async function autoUpdateFlexDay(session: { id: string; dayLabel: string; weekNumber: number; status: string; plannedDate: Date }) {
+  const results = []
 
-  const flexDay = await prisma.planSession.findFirst({
-    where: { weekNumber: session.weekNumber, dayLabel: 'יום גמיש' },
-  })
-  if (!flexDay) return []
-
-  if (session.status === 'done' && flexDay.status === 'planned') {
-    const updated = await prisma.planSession.update({
-      where: { id: flexDay.id },
-      data: { status: 'not_needed' },
+  if (session.dayLabel === 'אימון קצר 1') {
+    const flexDay = await prisma.planSession.findFirst({
+      where: { weekNumber: session.weekNumber, dayLabel: 'יום גמיש' },
     })
-    return [updated]
+    if (flexDay) {
+      if (session.status === 'done' && flexDay.status === 'planned') {
+        results.push(await prisma.planSession.update({
+          where: { id: flexDay.id },
+          data: { status: 'not_needed' },
+        }))
+      } else if (session.status === 'planned' && flexDay.status === 'not_needed') {
+        results.push(await prisma.planSession.update({
+          where: { id: flexDay.id },
+          data: { status: 'planned' },
+        }))
+      }
+    }
   }
 
-  if (session.status === 'planned' && flexDay.status === 'not_needed') {
-    const updated = await prisma.planSession.update({
-      where: { id: flexDay.id },
-      data: { status: 'planned' },
-    })
-    return [updated]
+  if (session.dayLabel === 'יום גמיש') {
+    if (session.status === 'done') {
+      const nextSession = await prisma.planSession.findFirst({
+        where: {
+          weekNumber: session.weekNumber,
+          plannedDate: { gt: session.plannedDate },
+          status: 'planned',
+        },
+        orderBy: { plannedDate: 'asc' },
+      })
+      if (nextSession) {
+        results.push(await prisma.planSession.update({
+          where: { id: nextSession.id },
+          data: { status: 'not_needed' },
+        }))
+      }
+    } else if (session.status === 'planned') {
+      const nextSession = await prisma.planSession.findFirst({
+        where: {
+          weekNumber: session.weekNumber,
+          plannedDate: { gt: session.plannedDate },
+          status: 'not_needed',
+        },
+        orderBy: { plannedDate: 'asc' },
+      })
+      if (nextSession) {
+        results.push(await prisma.planSession.update({
+          where: { id: nextSession.id },
+          data: { status: 'planned' },
+        }))
+      }
+    }
   }
 
-  return []
+  return results
 }
 
 export async function DELETE(_req: NextRequest, ctx: RouteContext<'/api/plan/[id]'>) {

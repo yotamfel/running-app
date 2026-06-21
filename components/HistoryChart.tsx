@@ -32,7 +32,28 @@ export default function HistoryChart({ runs: initialRuns }: { runs: Run[] }) {
   const [runs, setRuns] = useState(initialRuns)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [confirmId, setConfirmId] = useState<string | null>(null)
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const [editNoteValue, setEditNoteValue] = useState('')
+  const [savingNote, setSavingNote] = useState(false)
   const router = useRouter()
+
+  async function saveNote(id: string) {
+    setSavingNote(true)
+    try {
+      const res = await fetch(`/api/runs/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: editNoteValue || null }),
+      })
+      if (res.ok) {
+        setRuns(prev => prev.map(r => r.id === id ? { ...r, notes: editNoteValue || null } : r))
+        setEditingNoteId(null)
+        router.refresh()
+      }
+    } finally {
+      setSavingNote(false)
+    }
+  }
 
   async function deleteRun(id: string) {
     setDeleting(id)
@@ -96,7 +117,31 @@ export default function HistoryChart({ runs: initialRuns }: { runs: Run[] }) {
                 <p className="text-xs text-slate-400">
                   {new Date(r.date).toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
                 </p>
-                {r.notes && <p className="text-xs text-slate-500 mt-0.5 truncate max-w-[200px]">{r.notes}</p>}
+                {editingNoteId === r.id ? (
+                  <div className="mt-1 space-y-1">
+                    <textarea
+                      value={editNoteValue}
+                      onChange={e => setEditNoteValue(e.target.value)}
+                      rows={2}
+                      className="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1 text-xs resize-none focus:outline-none focus:border-indigo-500"
+                    />
+                    <div className="flex gap-1">
+                      <button onClick={() => saveNote(r.id)} disabled={savingNote} className="text-xs bg-indigo-600 text-white px-2 py-0.5 rounded disabled:opacity-60">שמור</button>
+                      <button onClick={() => setEditingNoteId(null)} className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded">ביטול</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 mt-0.5">
+                    {r.notes && <p className="text-xs text-slate-500 truncate max-w-[200px]">{r.notes}</p>}
+                    <button
+                      onClick={() => { setEditingNoteId(r.id); setEditNoteValue(r.notes || '') }}
+                      className="text-xs text-slate-600 hover:text-indigo-400 transition-colors"
+                      title="ערוך הערה"
+                    >
+                      ✏️
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-3 mr-2">
                 <div className="text-left">

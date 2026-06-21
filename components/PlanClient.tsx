@@ -37,10 +37,8 @@ export default function PlanClient({ initialSessions }: { initialSessions: Sessi
   const [saving, setSaving] = useState(false)
   const [expanded, setExpanded] = useState<string | null>(null)
   const [showBulk, setShowBulk] = useState(false)
-  const [bulkAction, setBulkAction] = useState<'shift' | 'bulk_skip'>('shift')
   const [bulkFrom, setBulkFrom] = useState('')
   const [bulkTo, setBulkTo] = useState('')
-  const [bulkDays, setBulkDays] = useState(7)
   const [bulkSaving, setBulkSaving] = useState(false)
   const [bulkMessage, setBulkMessage] = useState('')
 
@@ -103,14 +101,7 @@ export default function PlanClient({ initialSessions }: { initialSessions: Sessi
     setBulkSaving(true)
     setBulkMessage('')
     try {
-      const payload: Record<string, unknown> = { action: bulkAction }
-      if (bulkAction === 'shift') {
-        payload.fromDate = bulkFrom
-        payload.days = bulkDays
-      } else {
-        payload.fromDate = bulkFrom
-        payload.toDate = bulkTo
-      }
+      const payload = { action: 'bulk_skip', fromDate: bulkFrom, toDate: bulkTo }
       const res = await fetch('/api/plan/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -145,57 +136,26 @@ export default function PlanClient({ initialSessions }: { initialSessions: Sessi
         </button>
         {showBulk && (
           <div className="px-4 pb-4 space-y-4 border-t border-slate-700">
-            <div className="flex gap-2 mt-3">
-              <button
-                onClick={() => setBulkAction('shift')}
-                className={`flex-1 text-xs py-2 rounded-lg font-medium ${bulkAction === 'shift' ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-300'}`}
-              >
-                הזז תאריכים קדימה
-              </button>
-              <button
-                onClick={() => setBulkAction('bulk_skip')}
-                className={`flex-1 text-xs py-2 rounded-lg font-medium ${bulkAction === 'bulk_skip' ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-300'}`}
-              >
-                סמן תקופה כפוספסה
-              </button>
+            <div className="space-y-3 mt-3">
+              <p className="text-xs text-slate-400">סמן את כל האימונים המתוכננים בטווח תאריכים כפוספסים. התוכנית תתעדכן אוטומטית כשתתעד ריצות.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-slate-400">מתאריך</label>
+                  <input type="date" value={bulkFrom} onChange={e => setBulkFrom(e.target.value)} className={inputClass} />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400">עד תאריך</label>
+                  <input type="date" value={bulkTo} onChange={e => setBulkTo(e.target.value)} className={inputClass} />
+                </div>
+              </div>
             </div>
-
-            {bulkAction === 'shift' ? (
-              <div className="space-y-3">
-                <p className="text-xs text-slate-400">הזז את כל האימונים המתוכננים מתאריך מסוים קדימה</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-slate-400">מתאריך</label>
-                    <input type="date" value={bulkFrom} onChange={e => setBulkFrom(e.target.value)} className={inputClass} />
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-400">מספר ימים</label>
-                    <input type="number" min={1} value={bulkDays} onChange={e => setBulkDays(parseInt(e.target.value) || 0)} className={inputClass} />
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-xs text-slate-400">סמן את כל האימונים המתוכננים בטווח תאריכים כפוספסים</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-slate-400">מתאריך</label>
-                    <input type="date" value={bulkFrom} onChange={e => setBulkFrom(e.target.value)} className={inputClass} />
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-400">עד תאריך</label>
-                    <input type="date" value={bulkTo} onChange={e => setBulkTo(e.target.value)} className={inputClass} />
-                  </div>
-                </div>
-              </div>
-            )}
 
             <button
               onClick={executeBulk}
-              disabled={bulkSaving || !bulkFrom}
+              disabled={bulkSaving || !bulkFrom || !bulkTo}
               className="w-full bg-indigo-600 text-white rounded-lg py-2.5 text-sm font-medium disabled:opacity-60"
             >
-              {bulkSaving ? 'מעדכן...' : bulkAction === 'shift' ? 'הזז תוכנית' : 'סמן כפוספסים'}
+              {bulkSaving ? 'מעדכן...' : 'סמן כפוספסים'}
             </button>
 
             {bulkMessage && (

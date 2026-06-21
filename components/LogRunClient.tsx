@@ -10,11 +10,13 @@ type Session = {
   targetKm: number
 }
 
-function formatPace(dist: string, dur: string) {
+function formatPace(dist: string, minutes: string, seconds: string) {
   const d = parseFloat(dist)
-  const m = parseFloat(dur)
-  if (!d || !m || d === 0) return null
-  const pace = m / d
+  const mins = parseFloat(minutes) || 0
+  const secs = parseFloat(seconds) || 0
+  const totalMin = mins + secs / 60
+  if (!d || !totalMin || d === 0) return null
+  const pace = totalMin / d
   const min = Math.floor(pace)
   const sec = Math.round((pace - min) * 60)
   return `${min}:${sec.toString().padStart(2, '0')} דק'/ק"מ`
@@ -27,7 +29,8 @@ export default function LogRunClient({ plannedSessions }: { plannedSessions: Ses
   const [form, setForm] = useState({
     date: today,
     distanceKm: '',
-    durationMin: '',
+    durationMinutes: '',
+    durationSeconds: '',
     feeling: '',
     notes: '',
     planSessionId: '',
@@ -36,7 +39,7 @@ export default function LogRunClient({ plannedSessions }: { plannedSessions: Ses
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
-  const pace = formatPace(form.distanceKm, form.durationMin)
+  const pace = formatPace(form.distanceKm, form.durationMinutes, form.durationSeconds)
 
   function set(key: string, value: string) {
     setForm(f => ({ ...f, [key]: value }))
@@ -44,17 +47,18 @@ export default function LogRunClient({ plannedSessions }: { plannedSessions: Ses
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.distanceKm || !form.durationMin) {
+    if (!form.distanceKm || (!form.durationMinutes && !form.durationSeconds)) {
       setError('יש למלא מרחק וזמן')
       return
     }
     setSaving(true)
     setError(null)
     try {
+      const durationMin = (parseFloat(form.durationMinutes) || 0) + (parseFloat(form.durationSeconds) || 0) / 60
       const res = await fetch('/api/runs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, durationMin }),
       })
       if (!res.ok) throw new Error('שגיאה בשמירה')
       setSuccess(true)
@@ -78,11 +82,15 @@ export default function LogRunClient({ plannedSessions }: { plannedSessions: Ses
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-1">מרחק (ק&quot;מ)</label>
-          <input type="number" step="0.1" min="0" value={form.distanceKm} onChange={e => set('distanceKm', e.target.value)} placeholder="0.0" className={inputClass} required />
+          <input type="number" step="0.01" min="0" value={form.distanceKm} onChange={e => set('distanceKm', e.target.value)} placeholder="0.00" className={inputClass} required />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1">זמן (דקות)</label>
-          <input type="number" step="0.5" min="0" value={form.durationMin} onChange={e => set('durationMin', e.target.value)} placeholder="0" className={inputClass} required />
+          <label className="block text-sm font-medium text-slate-300 mb-1">זמן</label>
+          <div className="flex gap-2 items-center">
+            <input type="number" min="0" value={form.durationMinutes} onChange={e => set('durationMinutes', e.target.value)} placeholder="דק'" className={inputClass + ' text-center'} />
+            <span className="text-slate-400">:</span>
+            <input type="number" min="0" max="59" value={form.durationSeconds} onChange={e => set('durationSeconds', e.target.value)} placeholder="שנ'" className={inputClass + ' text-center'} />
+          </div>
         </div>
       </div>
 
