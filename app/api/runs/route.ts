@@ -45,24 +45,23 @@ export async function POST(request: NextRequest) {
     }
 
     if (session.dayLabel === 'יום גמיש') {
-      const nextSession = await prisma.planSession.findFirst({
-        where: { weekNumber: session.weekNumber, id: { not: session.id }, status: 'planned', plannedDate: { gt: session.plannedDate } },
-        orderBy: { plannedDate: 'asc' },
+      const adjacent = await prisma.planSession.findMany({
+        where: { weekNumber: session.weekNumber, id: { not: session.id }, status: 'planned' },
       })
-      const prevSession = await prisma.planSession.findFirst({
-        where: { weekNumber: session.weekNumber, id: { not: session.id }, status: 'planned', plannedDate: { lt: session.plannedDate } },
-        orderBy: { plannedDate: 'desc' },
-      })
-      const closest = nextSession ?? prevSession
-      if (closest) {
+      if (adjacent.length > 0) {
+        const flexTime = session.plannedDate.getTime()
+        adjacent.sort((a, b) =>
+          Math.abs(a.plannedDate.getTime() - flexTime) - Math.abs(b.plannedDate.getTime() - flexTime)
+        )
         await prisma.planSession.update({
-          where: { id: closest.id },
+          where: { id: adjacent[0].id },
           data: { status: 'not_needed' },
         })
       }
     }
 
     // Auto-reschedule: if the run was done later than planned, shift future sessions
+    // Skips Fridays, and avoids placing long runs on Saturdays
     const runDate = new Date(body.date)
     const plannedDate = new Date(session.plannedDate)
     const delayDays = Math.round((runDate.getTime() - plannedDate.getTime()) / 86400000)
@@ -72,12 +71,18 @@ export async function POST(request: NextRequest) {
         orderBy: { plannedDate: 'asc' },
       })
       await Promise.all(
-        futureSessions.map(s =>
-          prisma.planSession.update({
+        futureSessions.map(s => {
+          let newDate = new Date(s.plannedDate.getTime() + delayDays * 86400000)
+          // Skip Friday (day 5)
+          if (newDate.getUTCDay() === 5) newDate = new Date(newDate.getTime() + 86400000)
+          // Long runs shouldn't land on Saturday (day 6)
+          const isLong = s.dayLabel.includes('ארוך')
+          if (isLong && newDate.getUTCDay() === 6) newDate = new Date(newDate.getTime() + 86400000)
+          return prisma.planSession.update({
             where: { id: s.id },
-            data: { plannedDate: new Date(s.plannedDate.getTime() + delayDays * 86400000) },
+            data: { plannedDate: newDate },
           })
-        )
+        })
       )
     }
   }

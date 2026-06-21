@@ -52,29 +52,30 @@ async function autoUpdateFlexDay(session: { id: string; dayLabel: string; weekNu
 
   if (session.dayLabel === 'יום גמיש') {
     if (session.status === 'done') {
-      const nextSession = await prisma.planSession.findFirst({
-        where: { weekNumber: session.weekNumber, id: { not: session.id }, status: 'planned', plannedDate: { gt: session.plannedDate } },
-        orderBy: { plannedDate: 'asc' },
+      const adjacent = await prisma.planSession.findMany({
+        where: { weekNumber: session.weekNumber, id: { not: session.id }, status: 'planned' },
       })
-      const prevSession = await prisma.planSession.findFirst({
-        where: { weekNumber: session.weekNumber, id: { not: session.id }, status: 'planned', plannedDate: { lt: session.plannedDate } },
-        orderBy: { plannedDate: 'desc' },
-      })
-      const closest = nextSession ?? prevSession
-      if (closest) {
+      if (adjacent.length > 0) {
+        const flexTime = session.plannedDate.getTime()
+        adjacent.sort((a, b) =>
+          Math.abs(a.plannedDate.getTime() - flexTime) - Math.abs(b.plannedDate.getTime() - flexTime)
+        )
         results.push(await prisma.planSession.update({
-          where: { id: closest.id },
+          where: { id: adjacent[0].id },
           data: { status: 'not_needed' },
         }))
       }
     } else if (session.status === 'planned') {
-      const adjacentNotNeeded = await prisma.planSession.findFirst({
+      const adjacent = await prisma.planSession.findMany({
         where: { weekNumber: session.weekNumber, id: { not: session.id }, status: 'not_needed' },
-        orderBy: { plannedDate: 'desc' },
       })
-      if (adjacentNotNeeded) {
+      if (adjacent.length > 0) {
+        const flexTime = session.plannedDate.getTime()
+        adjacent.sort((a, b) =>
+          Math.abs(a.plannedDate.getTime() - flexTime) - Math.abs(b.plannedDate.getTime() - flexTime)
+        )
         results.push(await prisma.planSession.update({
-          where: { id: adjacentNotNeeded.id },
+          where: { id: adjacent[0].id },
           data: { status: 'planned' },
         }))
       }
