@@ -117,31 +117,16 @@ export default function HistoryChart({ runs: initialRuns }: { runs: Run[] }) {
                 <p className="text-xs text-slate-400">
                   {new Date(r.date).toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
                 </p>
-                {editingNoteId === r.id ? (
-                  <div className="mt-1 space-y-1">
-                    <textarea
-                      value={editNoteValue}
-                      onChange={e => setEditNoteValue(e.target.value)}
-                      rows={2}
-                      className="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1 text-xs resize-none focus:outline-none focus:border-indigo-500"
-                    />
-                    <div className="flex gap-1">
-                      <button onClick={() => saveNote(r.id)} disabled={savingNote} className="text-xs bg-indigo-600 text-white px-2 py-0.5 rounded disabled:opacity-60">שמור</button>
-                      <button onClick={() => setEditingNoteId(null)} className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded">ביטול</button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1 mt-0.5">
-                    {r.notes && <p className="text-xs text-slate-500 truncate max-w-[200px]">{r.notes}</p>}
-                    <button
-                      onClick={() => { setEditingNoteId(r.id); setEditNoteValue(r.notes || '') }}
-                      className="text-xs text-slate-600 hover:text-indigo-400 transition-colors"
-                      title="ערוך הערה"
-                    >
-                      ✏️
-                    </button>
-                  </div>
-                )}
+                <div className="flex items-center gap-1 mt-0.5">
+                  {r.notes && <p className="text-xs text-slate-500 truncate max-w-[200px]">{r.notes}</p>}
+                  <button
+                    onClick={() => { setEditingNoteId(r.id); setEditNoteValue(r.notes || '') }}
+                    className="text-xs text-slate-600 hover:text-indigo-400 transition-colors"
+                    title="ערוך הערה"
+                  >
+                    ✏️
+                  </button>
+                </div>
               </div>
               <div className="flex items-center gap-3 mr-2">
                 <div className="text-left">
@@ -179,6 +164,47 @@ export default function HistoryChart({ runs: initialRuns }: { runs: Run[] }) {
           </div>
         ))}
       </div>
+
+      {editingNoteId && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-end justify-center">
+          <div className="bg-slate-800 rounded-t-2xl w-full max-w-lg max-h-[80vh] flex flex-col border-t border-slate-700">
+            <div className="flex justify-between items-center px-5 py-4 border-b border-slate-700">
+              <h2 className="font-bold text-lg text-white">עריכת הערה</h2>
+              <button
+                onClick={() => setEditingNoteId(null)}
+                className="text-slate-400 text-2xl leading-none hover:text-slate-200"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-5 flex-1">
+              <textarea
+                value={editNoteValue}
+                onChange={e => setEditNoteValue(e.target.value)}
+                rows={8}
+                autoFocus
+                placeholder="כתוב הערה..."
+                className="w-full bg-slate-700 border border-slate-600 text-white rounded-xl px-4 py-3 text-base resize-none focus:outline-none focus:border-indigo-500 leading-7"
+              />
+            </div>
+            <div className="px-5 pb-5 flex gap-3">
+              <button
+                onClick={() => saveNote(editingNoteId)}
+                disabled={savingNote}
+                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-3 font-semibold text-base disabled:opacity-60 transition-colors"
+              >
+                {savingNote ? 'שומר...' : 'שמור'}
+              </button>
+              <button
+                onClick={() => setEditingNoteId(null)}
+                className="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl py-3 font-semibold text-base transition-colors"
+              >
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
