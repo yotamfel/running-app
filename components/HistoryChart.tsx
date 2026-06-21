@@ -28,30 +28,73 @@ const tooltipStyle = {
   fontSize: '12px',
 }
 
+const inputClass = "w-full bg-slate-700 border border-slate-600 text-white rounded-xl px-4 py-3 text-base placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
+
+type EditForm = {
+  date: string
+  distanceKm: string
+  durationMinutes: string
+  durationSeconds: string
+  feeling: string
+  notes: string
+}
+
 export default function HistoryChart({ runs: initialRuns }: { runs: Run[] }) {
   const [runs, setRuns] = useState(initialRuns)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [confirmId, setConfirmId] = useState<string | null>(null)
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
-  const [editNoteValue, setEditNoteValue] = useState('')
-  const [savingNote, setSavingNote] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState<EditForm>({ date: '', distanceKm: '', durationMinutes: '', durationSeconds: '', feeling: '', notes: '' })
+  const [saving, setSaving] = useState(false)
   const router = useRouter()
 
-  async function saveNote(id: string) {
-    setSavingNote(true)
+  function startEdit(r: Run) {
+    const totalMin = r.durationMin
+    const mins = Math.floor(totalMin)
+    const secs = Math.round((totalMin - mins) * 60)
+    setEditForm({
+      date: new Date(r.date).toISOString().slice(0, 10),
+      distanceKm: String(r.distanceKm),
+      durationMinutes: String(mins),
+      durationSeconds: String(secs),
+      feeling: r.feeling ? String(r.feeling) : '',
+      notes: r.notes || '',
+    })
+    setEditingId(r.id)
+  }
+
+  async function saveEdit() {
+    if (!editingId) return
+    setSaving(true)
     try {
-      const res = await fetch(`/api/runs/${id}`, {
+      const durationMin = (parseFloat(editForm.durationMinutes) || 0) + (parseFloat(editForm.durationSeconds) || 0) / 60
+      const res = await fetch(`/api/runs/${editingId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes: editNoteValue || null }),
+        body: JSON.stringify({
+          date: editForm.date,
+          distanceKm: editForm.distanceKm,
+          durationMin,
+          feeling: editForm.feeling || null,
+          notes: editForm.notes || null,
+        }),
       })
       if (res.ok) {
-        setRuns(prev => prev.map(r => r.id === id ? { ...r, notes: editNoteValue || null } : r))
-        setEditingNoteId(null)
+        const updated = await res.json()
+        setRuns(prev => prev.map(r => r.id === editingId ? {
+          ...r,
+          date: updated.date,
+          distanceKm: updated.distanceKm,
+          durationMin: updated.durationMin,
+          paceMinPerKm: updated.paceMinPerKm,
+          feeling: updated.feeling,
+          notes: updated.notes,
+        } : r))
+        setEditingId(null)
         router.refresh()
       }
     } finally {
-      setSavingNote(false)
+      setSaving(false)
     }
   }
 
@@ -117,16 +160,7 @@ export default function HistoryChart({ runs: initialRuns }: { runs: Run[] }) {
                 <p className="text-xs text-slate-400">
                   {new Date(r.date).toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
                 </p>
-                <div className="flex items-center gap-1 mt-0.5">
-                  {r.notes && <p className="text-xs text-slate-500 truncate max-w-[200px]">{r.notes}</p>}
-                  <button
-                    onClick={() => { setEditingNoteId(r.id); setEditNoteValue(r.notes || '') }}
-                    className="text-xs text-slate-600 hover:text-indigo-400 transition-colors"
-                    title="ערוך הערה"
-                  >
-                    ✏️
-                  </button>
-                </div>
+                {r.notes && <p className="text-xs text-slate-500 mt-0.5 truncate max-w-[200px]">{r.notes}</p>}
               </div>
               <div className="flex items-center gap-3 mr-2">
                 <div className="text-left">
@@ -134,6 +168,13 @@ export default function HistoryChart({ runs: initialRuns }: { runs: Run[] }) {
                   <p className="text-xs text-slate-500">{r.durationMin} דקות</p>
                   {r.feeling && <p className="text-xs text-slate-500">תחושה {r.feeling}/10</p>}
                 </div>
+                <button
+                  onClick={() => startEdit(r)}
+                  className="text-slate-600 hover:text-indigo-400 transition-colors p-1"
+                  title="ערוך ריצה"
+                >
+                  ✏️
+                </button>
                 {confirmId === r.id ? (
                   <div className="flex gap-1">
                     <button
@@ -165,38 +206,77 @@ export default function HistoryChart({ runs: initialRuns }: { runs: Run[] }) {
         ))}
       </div>
 
-      {editingNoteId && (
+      {editingId && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-end justify-center">
-          <div className="bg-slate-800 rounded-t-2xl w-full max-w-lg max-h-[80vh] flex flex-col border-t border-slate-700">
+          <div className="bg-slate-800 rounded-t-2xl w-full max-w-lg max-h-[85vh] flex flex-col border-t border-slate-700">
             <div className="flex justify-between items-center px-5 py-4 border-b border-slate-700">
-              <h2 className="font-bold text-lg text-white">עריכת הערה</h2>
+              <h2 className="font-bold text-lg text-white">עריכת ריצה</h2>
               <button
-                onClick={() => setEditingNoteId(null)}
+                onClick={() => setEditingId(null)}
                 className="text-slate-400 text-2xl leading-none hover:text-slate-200"
               >
                 ×
               </button>
             </div>
-            <div className="p-5 flex-1">
-              <textarea
-                value={editNoteValue}
-                onChange={e => setEditNoteValue(e.target.value)}
-                rows={8}
-                autoFocus
-                placeholder="כתוב הערה..."
-                className="w-full bg-slate-700 border border-slate-600 text-white rounded-xl px-4 py-3 text-base resize-none focus:outline-none focus:border-indigo-500 leading-7"
-              />
+            <div className="overflow-y-auto p-5 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">תאריך</label>
+                <input type="date" value={editForm.date} onChange={e => setEditForm(f => ({ ...f, date: e.target.value }))} className={inputClass} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">מרחק (ק&quot;מ)</label>
+                  <input type="number" step="0.01" min="0" value={editForm.distanceKm} onChange={e => setEditForm(f => ({ ...f, distanceKm: e.target.value }))} className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">זמן</label>
+                  <div className="flex gap-2 items-center">
+                    <input type="number" min="0" value={editForm.durationMinutes} onChange={e => setEditForm(f => ({ ...f, durationMinutes: e.target.value }))} placeholder="דק'" className={inputClass + ' text-center'} />
+                    <span className="text-slate-400">:</span>
+                    <input type="number" min="0" max="59" value={editForm.durationSeconds} onChange={e => setEditForm(f => ({ ...f, durationSeconds: e.target.value }))} placeholder="שנ'" className={inputClass + ' text-center'} />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">תחושה (1–10)</label>
+                <div className="flex gap-2 flex-wrap">
+                  {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setEditForm(f => ({ ...f, feeling: f.feeling === String(n) ? '' : String(n) }))}
+                      className={`w-9 h-9 rounded-full text-sm font-medium border transition-colors ${
+                        editForm.feeling === String(n)
+                          ? 'bg-indigo-600 text-white border-indigo-600'
+                          : 'bg-slate-700 text-slate-300 border-slate-600'
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">הערות</label>
+                <textarea
+                  value={editForm.notes}
+                  onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))}
+                  rows={4}
+                  placeholder="איך הרגשת, מה עבד, מה היה קשה..."
+                  className={inputClass + ' resize-none'}
+                />
+              </div>
             </div>
             <div className="px-5 pb-5 flex gap-3">
               <button
-                onClick={() => saveNote(editingNoteId)}
-                disabled={savingNote}
+                onClick={saveEdit}
+                disabled={saving}
                 className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-3 font-semibold text-base disabled:opacity-60 transition-colors"
               >
-                {savingNote ? 'שומר...' : 'שמור'}
+                {saving ? 'שומר...' : 'שמור'}
               </button>
               <button
-                onClick={() => setEditingNoteId(null)}
+                onClick={() => setEditingId(null)}
                 className="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl py-3 font-semibold text-base transition-colors"
               >
                 ביטול
