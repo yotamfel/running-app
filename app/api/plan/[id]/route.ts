@@ -53,31 +53,28 @@ async function autoUpdateFlexDay(session: { id: string; dayLabel: string; weekNu
   if (session.dayLabel === 'יום גמיש') {
     if (session.status === 'done') {
       const nextSession = await prisma.planSession.findFirst({
-        where: {
-          weekNumber: session.weekNumber,
-          plannedDate: { gt: session.plannedDate },
-          status: 'planned',
-        },
+        where: { weekNumber: session.weekNumber, id: { not: session.id }, status: 'planned', plannedDate: { gt: session.plannedDate } },
         orderBy: { plannedDate: 'asc' },
       })
-      if (nextSession) {
+      const prevSession = await prisma.planSession.findFirst({
+        where: { weekNumber: session.weekNumber, id: { not: session.id }, status: 'planned', plannedDate: { lt: session.plannedDate } },
+        orderBy: { plannedDate: 'desc' },
+      })
+      const closest = nextSession ?? prevSession
+      if (closest) {
         results.push(await prisma.planSession.update({
-          where: { id: nextSession.id },
+          where: { id: closest.id },
           data: { status: 'not_needed' },
         }))
       }
     } else if (session.status === 'planned') {
-      const nextSession = await prisma.planSession.findFirst({
-        where: {
-          weekNumber: session.weekNumber,
-          plannedDate: { gt: session.plannedDate },
-          status: 'not_needed',
-        },
-        orderBy: { plannedDate: 'asc' },
+      const adjacentNotNeeded = await prisma.planSession.findFirst({
+        where: { weekNumber: session.weekNumber, id: { not: session.id }, status: 'not_needed' },
+        orderBy: { plannedDate: 'desc' },
       })
-      if (nextSession) {
+      if (adjacentNotNeeded) {
         results.push(await prisma.planSession.update({
-          where: { id: nextSession.id },
+          where: { id: adjacentNotNeeded.id },
           data: { status: 'planned' },
         }))
       }

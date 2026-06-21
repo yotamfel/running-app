@@ -46,16 +46,17 @@ export async function POST(request: NextRequest) {
 
     if (session.dayLabel === 'יום גמיש') {
       const nextSession = await prisma.planSession.findFirst({
-        where: {
-          weekNumber: session.weekNumber,
-          plannedDate: { gt: session.plannedDate },
-          status: 'planned',
-        },
+        where: { weekNumber: session.weekNumber, id: { not: session.id }, status: 'planned', plannedDate: { gt: session.plannedDate } },
         orderBy: { plannedDate: 'asc' },
       })
-      if (nextSession) {
+      const prevSession = await prisma.planSession.findFirst({
+        where: { weekNumber: session.weekNumber, id: { not: session.id }, status: 'planned', plannedDate: { lt: session.plannedDate } },
+        orderBy: { plannedDate: 'desc' },
+      })
+      const closest = nextSession ?? prevSession
+      if (closest) {
         await prisma.planSession.update({
-          where: { id: nextSession.id },
+          where: { id: closest.id },
           data: { status: 'not_needed' },
         })
       }
