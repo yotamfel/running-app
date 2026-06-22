@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { isDemo } from '@/lib/useDemo'
 
 export default function DashboardClient() {
   const [feedback, setFeedback] = useState<string | null>(null)
@@ -44,16 +45,18 @@ export default function DashboardClient() {
     })
   }
 
+  const demo = isDemo()
+
   return (
     <>
       <div className="space-y-2">
-        <button
+        {!demo && <button
           onClick={getFeedback}
           disabled={loading}
           className="w-full bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-200 rounded-xl py-4 font-semibold text-base disabled:opacity-60 transition-colors"
         >
           {loading ? 'מנתח נתונים...' : '🤖 ניתוח AI חדש'}
-        </button>
+        </button>}
 
         {feedback && !open && (
           <button

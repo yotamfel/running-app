@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { isDemo } from '@/lib/useDemo'
 
 type Session = {
   id: string
@@ -24,7 +25,15 @@ function formatPace(dist: string, minutes: string, seconds: string) {
 
 export default function LogRunClient({ plannedSessions }: { plannedSessions: Session[] }) {
   const router = useRouter()
+  const demo = isDemo()
   const today = new Date().toISOString().slice(0, 10)
+
+  if (demo) return (
+    <div className="text-center text-slate-400 py-12">
+      <p className="text-lg">מצב צפייה בלבד</p>
+      <p className="text-sm mt-1">הוספת ריצות לא זמינה במצב דמו</p>
+    </div>
+  )
 
   const [form, setForm] = useState({
     date: today,

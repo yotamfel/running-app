@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { isDemo } from '@/lib/useDemo'
 
 type Session = {
   id: string
@@ -31,6 +32,7 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 export default function PlanClient({ initialSessions }: { initialSessions: Session[] }) {
+  const demo = isDemo()
   const [sessions, setSessions] = useState(initialSessions)
   const [editing, setEditing] = useState<string | null>(null)
   const [editData, setEditData] = useState<Partial<Session>>({})
@@ -193,7 +195,7 @@ export default function PlanClient({ initialSessions }: { initialSessions: Sessi
                                     {expanded === s.id ? '▲' : 'פרטים'}
                                   </button>
                                 )}
-                                <button onClick={() => startEdit(s)} className="text-slate-500 hover:text-slate-300 p-1">✏️</button>
+                                {!demo && <button onClick={() => startEdit(s)} className="text-slate-500 hover:text-slate-300 p-1">✏️</button>}
                               </div>
                             </div>
 
@@ -206,9 +208,9 @@ export default function PlanClient({ initialSessions }: { initialSessions: Sessi
                             <div className="flex gap-2 mt-2 flex-wrap">
                               {s.status === 'planned' ? (
                                 <>
-                                  <button onClick={() => quickStatus(s.id, 'done')} className="text-xs bg-emerald-900/40 text-emerald-400 border border-emerald-800 px-3 py-1 rounded-full">בוצע</button>
+                                  {!demo && <><button onClick={() => quickStatus(s.id, 'done')} className="text-xs bg-emerald-900/40 text-emerald-400 border border-emerald-800 px-3 py-1 rounded-full">בוצע</button>
                                   <button onClick={() => quickStatus(s.id, 'skipped')} className="text-xs bg-red-900/40 text-red-400 border border-red-800 px-3 py-1 rounded-full">פוספס</button>
-                                  <button onClick={() => quickStatus(s.id, 'rescheduled')} className="text-xs bg-amber-900/40 text-amber-400 border border-amber-800 px-3 py-1 rounded-full">נדחה</button>
+                                  <button onClick={() => quickStatus(s.id, 'rescheduled')} className="text-xs bg-amber-900/40 text-amber-400 border border-amber-800 px-3 py-1 rounded-full">נדחה</button></>}
                                   {s.dayLabel === 'יום גמיש' && (
                                     <button onClick={() => quickStatus(s.id, 'not_needed')} className="text-xs bg-sky-900/40 text-sky-400 border border-sky-800 px-3 py-1 rounded-full">לא נצרך</button>
                                   )}
