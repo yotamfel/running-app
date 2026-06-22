@@ -211,12 +211,12 @@ export default function PlanClient({ initialSessions }: { initialSessions: Sessi
                                   {!demo && <><button onClick={() => quickStatus(s.id, 'done')} className="text-xs bg-emerald-900/40 text-emerald-400 border border-emerald-800 px-3 py-1 rounded-full">בוצע</button>
                                   <button onClick={() => quickStatus(s.id, 'skipped')} className="text-xs bg-red-900/40 text-red-400 border border-red-800 px-3 py-1 rounded-full">פוספס</button>
                                   <button onClick={() => quickStatus(s.id, 'rescheduled')} className="text-xs bg-amber-900/40 text-amber-400 border border-amber-800 px-3 py-1 rounded-full">נדחה</button></>}
-                                  {s.dayLabel === 'יום גמיש' && (
-                                    {!demo && <button onClick={() => quickStatus(s.id, 'not_needed')} className="text-xs bg-sky-900/40 text-sky-400 border border-sky-800 px-3 py-1 rounded-full">לא נצרך</button>}
+                                  {!demo && s.dayLabel === 'יום גמיש' && (
+                                    <button onClick={() => quickStatus(s.id, 'not_needed')} className="text-xs bg-sky-900/40 text-sky-400 border border-sky-800 px-3 py-1 rounded-full">לא נצרך</button>
                                   )}
                                 </>
                               ) : (
-                                {!demo && <button onClick={() => quickStatus(s.id, 'planned')} className="text-xs bg-slate-700 text-slate-300 border border-slate-600 px-3 py-1 rounded-full">↩ החזר למתוכנן</button>}
+                                !demo && <button onClick={() => quickStatus(s.id, 'planned')} className="text-xs bg-slate-700 text-slate-300 border border-slate-600 px-3 py-1 rounded-full">↩ החזר למתוכנן</button>
                               )}
                             </div>
                           </div>
