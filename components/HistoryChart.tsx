@@ -207,8 +207,8 @@ export default function HistoryChart({ runs: initialRuns }: { runs: Run[] }) {
       </div>
 
       {editingId && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-end justify-center">
-          <div className="bg-slate-800 rounded-t-2xl w-full max-w-lg max-h-[85vh] flex flex-col border-t border-slate-700">
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-800 rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col border border-slate-700">
             <div className="flex justify-between items-center px-5 py-4 border-b border-slate-700">
               <h2 className="font-bold text-lg text-white">עריכת ריצה</h2>
               <button
@@ -267,7 +267,7 @@ export default function HistoryChart({ runs: initialRuns }: { runs: Run[] }) {
                 />
               </div>
             </div>
-            <div className="px-5 pb-8 flex gap-3" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom, 2rem))' }}>
+            <div className="px-5 pb-5 flex gap-3">
               <button
                 onClick={saveEdit}
                 disabled={saving}
