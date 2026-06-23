@@ -96,9 +96,9 @@ export default function LogRunClient({ plannedSessions }: { plannedSessions: Ses
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-1">זמן</label>
           <div className="flex gap-2 items-center">
-            <input type="number" min="0" value={form.durationMinutes} onChange={e => set('durationMinutes', e.target.value)} placeholder="דק'" className={inputClass + ' text-center'} />
-            <span className="text-slate-400">:</span>
             <input type="number" min="0" max="59" value={form.durationSeconds} onChange={e => set('durationSeconds', e.target.value)} placeholder="שנ'" className={inputClass + ' text-center'} />
+            <span className="text-slate-400">:</span>
+            <input type="number" min="0" value={form.durationMinutes} onChange={e => set('durationMinutes', e.target.value)} placeholder="דק'" className={inputClass + ' text-center'} />
           </div>
         </div>
       </div>
