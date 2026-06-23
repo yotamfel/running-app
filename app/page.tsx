@@ -43,7 +43,7 @@ export default async function HomePage() {
   const totalRuns = allRuns.length
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen pb-24">
       <div className="bg-slate-800 text-white px-4 pt-10 pb-8 border-b border-slate-700">
         <h1 className="text-2xl font-bold">מעקב ריצה</h1>
         <p className="text-slate-400 mt-1 text-sm">

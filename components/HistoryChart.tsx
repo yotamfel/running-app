@@ -267,7 +267,7 @@ export default function HistoryChart({ runs: initialRuns }: { runs: Run[] }) {
                 />
               </div>
             </div>
-            <div className="px-5 pb-5 flex gap-3">
+            <div className="px-5 pb-8 flex gap-3" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom, 2rem))' }}>
               <button
                 onClick={saveEdit}
                 disabled={saving}
